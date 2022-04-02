@@ -6,9 +6,9 @@ import datetime
 import random
 from tabulate import tabulate
 
-server_address = ('172.16.16.101', 12000)
+server_address = ('172.16.16.101', 14000)
 
-def make_socket(destination_address='localhost',port=12000):
+def make_socket(destination_address='localhost',port=14000):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = (destination_address, port)
@@ -18,14 +18,14 @@ def make_socket(destination_address='localhost',port=12000):
     except Exception as ee:
         logging.warning(f"error {str(ee)}")
 
-def deserialisasi(s):
-    logging.warning(f"deserialisasi {s.strip()}")
+def deserialization(s):
+    logging.warning(f"deserialization {s.strip()}")
     return json.loads(s)
 
 def send_command(command_str):
-    alamat_server = server_address[0]
+    addressing_server = server_address[0]
     port_server = server_address[1]
-    sock = make_socket(alamat_server,port_server)
+    sock = make_socket(addressing_server,port_server)
 
     logging.warning(f"connecting to {server_address}")
     try:
@@ -46,57 +46,57 @@ def send_command(command_str):
                 break
         # at this point, data_received (string) will contain all data coming from the socket
         # to be able to use the data_received as a dict, need to load it using json.loads()
-        hasil = deserialisasi(data_received)
+        result = deserialization(data_received)
         logging.warning("data received from server:")
-        return hasil
+        return result
     except Exception as ee:
         logging.warning(f"error during data receiving {str(ee)}")
         return False
 
-def getdatapemain(nomor=0):
-    cmd=f"getdatapemain {nomor}\r\n\r\n"
-    hasil = send_command(cmd)
-    if (hasil):
+def get_player_data(nomor=0):
+    cmd=f"get_player_data {nomor}\r\n\r\n"
+    result = send_command(cmd)
+    if (result):
         pass
     else:
-        print("kegagalan pada data transfer")
-    return hasil
+        print("data transfer failure")
+    return result
 
-def lihatversi(is_secure=False):
+def see_version():
     cmd=f"versi \r\n\r\n"
-    hasil = send_command(cmd)
-    return hasil
+    result = send_command(cmd)
+    return result
 
-def getdatapemain_multithread(total_request, table_data):
+def get_player_data_multithread(total_request,  proportion_data):
     total_response = 0
     texec = dict()
-    catat_awal = datetime.datetime.now()
+    temp1 = datetime.datetime.now()
 
     for k in range(total_request):
-        # bagian ini merupakan bagian yang mengistruksikan eksekusi getdatapemain secara multithread
+        # bagian ini merupakan bagian yang mengistruksikan eksekusi get_player_data secara multithread
         texec[k] = threading.Thread(
-            target=getdatapemain, args=(random.randint(1, 20),))
+            target=get_player_data, args=(random.randint(1, 20),))
         texec[k].start()
 
     # setelah menyelesaikan tugasnya, dikembalikan ke main thread dengan join
     for k in range(total_request):
-        if (texec[k]):
+        if (texec[k] != -1):
             total_response += 1
         texec[k].join()
 
-    catat_akhir = datetime.datetime.now()
-    selesai = catat_akhir - catat_awal
-    table_data.append([total_request, total_request, total_response, selesai])
+    temp2 = datetime.datetime.now()
+    complete = temp2 - temp1
+    proportion_data.append([total_request, total_request, total_response, complete])
 
 if __name__ == '__main__':
-    h = lihatversi()
+    h = see_version()
     if (h):
         print(h)
     total_request = [1, 5, 10, 20]
-    table_data = []
+    proportion_data = []
     
     for request in total_request:
-        getdatapemain_multithread(request, table_data)
+        get_player_data_multithread(request,  proportion_data)
         
-    table_header = ["Jumlah Thread", "Jumlah Request", "Jumlah Response", "Latency"]
-    print(tabulate(table_data, headers=table_header, tablefmt="fancy_grid"))
+    porportion_header = ["Thread Count", "Request Count", "Response Count", "Execution Time", "Average Latency"]
+    print(tabulate( proportion_data, headers=porportion_header, tablefmt="fancy_grid"))
