@@ -25,33 +25,34 @@ alldata['18']=dict(nomor=12, nama="Martin Braithwaite", team="Barcelona", positi
 alldata['19']=dict(nomor=19, nama="Ferran Torres", team="19", position="Forward")
 alldata['20']=dict(nomor=25, nama="Pierre Emerick Aubameyang", team="Barcelona", position="Forward")
 
-def versi():
-    return "versi 0.0.1"
+def version():
+    return "version 0.0.1"
 
-def proses_request(request_string):
+
+def process_request(request_string):
     #format request
     # NAMACOMMAND spasi PARAMETER
     cstring = request_string.split(" ")
-    hasil = None
+    result = None
     try:
         command = cstring[0].strip()
-        if (command == 'getdatapemain'):
+        if (command == 'get_player_data'):
             # getdata spasi parameter1
             # parameter1 harus berupa nomor pemain
             logging.warning("getdata")
-            nomorpemain = cstring[1].strip()
+            nomor_player = cstring[1].strip()
             try:
-                logging.warning(f"data {nomorpemain} ketemu")
-                hasil = alldata[nomorpemain]
+                logging.warning(f"data {nomor_player} ketemu")
+                result = alldata[nomor_player]
             except:
-                hasil = None
-        elif (command == 'versi'):
-            hasil = versi()
+                result = None
+        elif (command == 'version'):
+            result = version()
     except:
-        hasil = None
-    return hasil
+        result = None
+    return result
 
-def serialisasi(a):
+def serialization(a):
     #print(a)
     #serialized = str(dicttoxml.dicttoxml(a))
     serialized =  json.dumps(a)
@@ -77,7 +78,7 @@ def run_server(server_address):
         # Receive the data in small chunks and retransmit it
 
         try:
-            selesai=False
+            complete=False
             data_received="" #string
             while True:
                 data = connection.recv(32)
@@ -85,14 +86,14 @@ def run_server(server_address):
                 if data:
                     data_received += data.decode()
                     if "\r\n\r\n" in data_received:
-                        selesai=True
+                        complete=True
 
-                    if (selesai==True):
-                        hasil = proses_request(data_received)
-                        logging.warning(f"hasil proses: {hasil}")
+                    if (complete==True):
+                        result = process_request(data_received)
+                        logging.warning(f"process result: {result}")
 
-                        #hasil bisa berupa tipe dictionary
-                        #harus diserialisasi dulu sebelum dikirim via network
+                        #result bisa berupa tipe dictionary
+                        #harus diserialization dulu sebelum dikirim via network
                         # Send data
                         # some data structure may have complex structure
                         # how to send such data structure through the network ?
@@ -103,10 +104,10 @@ def run_server(server_address):
                         # all data that will be sent through network has to be encoded into bytes type"
                         # in this case, the message (type: string) will be encoded to bytes by calling encode
 
-                        hasil = serialisasi(hasil)
-                        hasil += "\r\n\r\n"
-                        connection.sendall(hasil.encode())
-                        selesai = False
+                        result = serialization(result)
+                        result += "\r\n\r\n"
+                        connection.sendall(result.encode())
+                        complete = False
                         data_received = ""  # string
                         break
 
@@ -119,9 +120,9 @@ def run_server(server_address):
 
 if __name__=='__main__':
     try:
-        run_server(('0.0.0.0', 12000))
+        run_server(('0.0.0.0', 14000))
     except KeyboardInterrupt:
-        logging.warning("Control-C: Program berhenti")
+        logging.warning("Control-C: Program shutdown")
         exit(0)
     finally:
-        logging.warning("selesai")
+        logging.warning("complete")
